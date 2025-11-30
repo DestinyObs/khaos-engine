@@ -10,15 +10,11 @@ nodes:
         nodeRegistration:
           kubeletExtraArgs:
             node-labels: "node-role=control-plane"
-            node-ip: "0.0.0.0"
       - |
         kind: ClusterConfiguration
         networking:
           serviceSubnet: "10.96.0.0/12"
           podSubnet: "10.244.0.0/16"
-        apiServer:
-          extraArgs:
-            bind-address: "0.0.0.0"
     extraPortMappings:
       # ArgoCD UI
       - containerPort: 30080
@@ -58,6 +54,8 @@ nodes:
 networking:
   # Default CNI (kindnet) - can be disabled to use Calico
   disableDefaultCNI: false
+  # Disable IPv6 to prevent localhost resolution issues
+  ipFamily: ipv4
   # Pod subnet
   podSubnet: "10.244.0.0/16"
   # Service subnet
