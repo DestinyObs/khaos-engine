@@ -10,11 +10,6 @@ nodes:
         nodeRegistration:
           kubeletExtraArgs:
             node-labels: "node-role=control-plane"
-      - |
-        kind: ClusterConfiguration
-        networking:
-          serviceSubnet: "10.96.0.0/12"
-          podSubnet: "10.244.0.0/16"
     extraPortMappings:
       # ArgoCD UI
       - containerPort: 30080
@@ -42,20 +37,18 @@ nodes:
           kubeletExtraArgs:
             node-labels: "node-role=worker,chaos-enabled=true"
 
-  # # Worker node 2
-  # - role: worker
-  #   kubeadmConfigPatches:
-  #     - |
-  #       kind: JoinConfiguration
-  #       nodeRegistration:
-  #         kubeletExtraArgs:
-  #           node-labels: "node-role=worker,chaos-enabled=true"
+  # Worker node 2
+  - role: worker
+    kubeadmConfigPatches:
+      - |
+        kind: JoinConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "node-role=worker,chaos-enabled=true"
 
 networking:
   # Default CNI (kindnet) - can be disabled to use Calico
   disableDefaultCNI: false
-  # Disable IPv6 to prevent localhost resolution issues
-  ipFamily: ipv4
   # Pod subnet
   podSubnet: "10.244.0.0/16"
   # Service subnet
