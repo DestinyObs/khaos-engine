@@ -37,14 +37,14 @@ nodes:
           kubeletExtraArgs:
             node-labels: "node-role=worker,chaos-enabled=true"
 
-  # Worker node 2
-  - role: worker
-    kubeadmConfigPatches:
-      - |
-        kind: JoinConfiguration
-        nodeRegistration:
-          kubeletExtraArgs:
-            node-labels: "node-role=worker,chaos-enabled=true"
+  # # Worker node 2
+  # - role: worker
+  #   kubeadmConfigPatches:
+  #     - |
+  #       kind: JoinConfiguration
+  #       nodeRegistration:
+  #         kubeletExtraArgs:
+  #           node-labels: "node-role=worker,chaos-enabled=true"
 
 networking:
   # Default CNI (kindnet) - can be disabled to use Calico
