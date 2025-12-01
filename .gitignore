@@ -1,0 +1,99 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+bin/
+vendor/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Kubernetes
+kubeconfig
+kubeconfig.*
+*.kubeconfig
+.kube/
+
+# Terraform (for future phases)
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+*.tfvars
+!*.tfvars.example
+.terraform.tfstate.lock.info
+crash.log
+override.tf
+override.tf.json
+
+# AWS
+.aws/
+credentials
+config
+
+# Secrets
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+secrets/
+.env
+.env.local
+
+# Logs
+*.log
+logs/
+
+# Build artifacts
+*.tar.gz
+*.zip
+*.jar
+*.war
+*.ear
+
+# Docker
+.dockerignore
+
+# Coverage reports
+coverage.out
+coverage.html
+*.coverprofile
+
+# OS
+Thumbs.db
+.DS_Store

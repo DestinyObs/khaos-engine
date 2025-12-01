@@ -1,0 +1,217 @@
+# ==============================================================================
+# ChaosCraft EKS Cluster Configuration
+# ==============================================================================
+# This config creates a production-ready EKS cluster with:
+# - Multi-node groups for workload isolation
+# - Spot instances for cost optimization
+# - Proper security (private subnets, IRSA)
+# - Auto-scaling capabilities
+# ==============================================================================
+
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: chaoscraft
+  region: us-east-1
+  version: "1.28"
+  tags:
+    Project: ChaosCraft
+    Environment: dev
+    ManagedBy: eksctl
+    Purpose: chaos-engineering-platform
+
+# ==============================================================================
+# VPC & Network Configuration
+# ==============================================================================
+vpc:
+  cidr: 10.0.0.0/16
+  nat:
+    gateway: Single 
+  clusterEndpoints:
+    publicAccess: true  
+    privateAccess: true 
+
+# ==============================================================================
+# Node Group 1: System Nodes (Infrastructure Workloads)
+# ==============================================================================
+# Purpose: Runs critical infrastructure like ArgoCD, Prometheus, control plane
+# Strategy: On-demand instances for reliability
+# Cost: ~$30/month for 1 node
+# ==============================================================================
+managedNodeGroups:
+  - name: system-nodes
+    instanceType: t3.medium  # 2 vCPU, 4GB RAM
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 2
+    volumeSize: 20
+    volumeType: gp3
+    
+    labels:
+      role: system
+      workload-type: infrastructure
+      node.kubernetes.io/purpose: infrastructure
+    
+    tags:
+      Name: chaoscraft-system-node
+      NodeGroup: system
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/chaoscraft: "owned"
+    
+    # IAM policies for system operations
+    iam:
+      withAddonPolicies:
+        autoScaler: true      # Allows cluster autoscaler to work
+        ebs: true             # Attach EBS volumes (for persistent storage)
+        efs: true             # Mount EFS if needed
+        albIngress: true      # For ALB ingress controller
+        cloudWatch: true      # Send logs/metrics to CloudWatch
+    
+    # SSH access (optional, for debugging)
+    ssh:
+      allow: false  # Disabled for security (use Systems Manager instead)
+
+# ==============================================================================
+# Node Group 2: Chaos Workers (Experiment Targets)
+# ==============================================================================
+# Purpose: Runs demo apps that receive chaos experiments
+# Strategy: Spot instances for 70% cost savings (can be interrupted)
+# Cost: ~$9/month for 2 nodes
+# Key Feature: chaos-enabled=true label for targeting
+# ==============================================================================
+  - name: chaos-workers
+    instanceType: t3.small   # 2 vCPU, 2GB RAM (cheaper)
+    desiredCapacity: 2
+    minSize: 1
+    maxSize: 5
+    volumeSize: 20
+    volumeType: gp3
+    
+    # SPOT INSTANCES: 70% discount, can be interrupted
+    spot: true
+    instancesDistribution:
+      onDemandBaseCapacity: 0
+      onDemandPercentageAboveBaseCapacity: 0
+      spotAllocationStrategy: capacity-optimized
+    
+    labels:
+      role: worker
+      chaos-enabled: "true"  # Critical label for chaos targeting
+      workload-type: experimental
+      node.kubernetes.io/purpose: chaos-experiments
+    
+    # Taint to prevent non-chaos workloads from scheduling here
+    taints:
+      - key: experimental
+        value: "true"
+        effect: NoSchedule
+    
+    tags:
+      Name: chaoscraft-chaos-worker
+      NodeGroup: chaos-workers
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/chaoscraft: "owned"
+    
+    iam:
+      withAddonPolicies:
+        ebs: true
+        cloudWatch: true
+    
+    ssh:
+      allow: false
+
+# ==============================================================================
+# EKS Addons (AWS-managed components)
+# ==============================================================================
+addons:
+  - name: vpc-cni
+    version: latest
+    attachPolicyARNs:
+      - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+  
+  - name: coredns
+    version: latest
+  
+  - name: kube-proxy
+    version: latest
+  
+  - name: aws-ebs-csi-driver
+    version: latest
+    wellKnownPolicies:
+      ebsCSIController: true
+
+# ==============================================================================
+# IAM Service Accounts (IRSA)
+# ==============================================================================
+# Enables pods to assume IAM roles without node-level permissions
+# This is a security best practice
+# ==============================================================================
+iam:
+  withOIDC: true  # Enable OIDC provider for IRSA
+  
+  serviceAccounts:
+    # Service account for cluster autoscaler
+    - metadata:
+        name: cluster-autoscaler
+        namespace: kube-system
+      wellKnownPolicies:
+        autoScaler: true
+    
+    # Service account for EBS CSI driver
+    - metadata:
+        name: ebs-csi-controller-sa
+        namespace: kube-system
+      wellKnownPolicies:
+        ebsCSIController: true
+    
+    # Service account for ALB ingress controller
+    - metadata:
+        name: aws-load-balancer-controller
+        namespace: kube-system
+      wellKnownPolicies:
+        awsLoadBalancerController: true
+
+# ==============================================================================
+# CloudWatch Logging
+# ==============================================================================
+# Sends control plane logs to CloudWatch for auditing
+# ==============================================================================
+cloudWatch:
+  clusterLogging:
+    enableTypes:
+      - api              # API server logs
+      - audit            # Audit logs (who did what)
+      - authenticator    # Authentication logs
+      - controllerManager
+      - scheduler
+    logRetentionInDays: 7  # Keep logs for 7 days (reduce to save cost)
+
+# ==============================================================================
+# Cluster Features
+# ==============================================================================
+fargateProfiles: []  # Not using Fargate (adds complexity)
+
+availabilityZones:
+  - us-east-1a
+  - us-east-1b
+  - us-east-1c
+
+# ==============================================================================
+# Cost Summary (Approximate Monthly, running 24/7)
+# ==============================================================================
+# EKS Control Plane:        $73.00
+# NAT Gateway:              $32.00
+# System nodes (1x t3.medium on-demand): $30.00
+# Chaos workers (2x t3.small spot):       $9.00
+# EBS volumes (60GB gp3):                 $5.00
+# Data transfer:                          $5.00
+# CloudWatch logs:                        $3.00
+# --------------------------------------------
+# TOTAL:                   ~$157/month (~$5/day)
+#
+# Cost Optimization Tips:
+# - Delete cluster when not using: eksctl delete cluster --name chaoscraft
+# - Reduce worker count to 1: Change desiredCapacity to 1
+# - Use t3.micro instead of t3.small for workers (if workloads fit)
+# ==============================================================================
