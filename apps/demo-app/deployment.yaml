@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-app
+  namespace: default
+  labels:
+    app: demo-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: demo-app
+  template:
+    metadata:
+      labels:
+        app: demo-app
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8085"
+        prometheus.io/path: "/metrics"
+    spec:
+      nodeSelector:
+        chaos-enabled: "true"
+      tolerations:
+        - key: experimental
+          operator: Equal
+          value: "true"
+          effect: NoSchedule
+      containers:
+        - name: demo-app
+          image: hashicorp/http-echo:latest
+          command:
+            - http-echo
+            - -listen=:8085
+            - -text=ChaosCraft Demo - Temporary until custom image built
+          ports:
+            - containerPort: 8085
+              name: http
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8085
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8085
+            initialDelaySeconds: 5
+            periodSeconds: 5

@@ -1,4 +1,4 @@
-.PHONY: help cluster-create cluster-delete cluster-info cluster-cost argocd-install argocd-url argocd-password observability-install prometheus-url grafana-url
+.PHONY: help cluster-create cluster-delete cluster-info cluster-cost argocd-install argocd-url argocd-password observability-install prometheus-url grafana-url demo-deploy demo-url
 
 # ==============================================================================
 # ChaosCraft Makefile - Cluster Management + GitOps
@@ -271,5 +271,31 @@ observability-uninstall: ## Uninstall Prometheus + Grafana
 	@kubectl delete -f manifests/observability/prometheus.yaml
 	@kubectl delete namespace observability
 	@echo "Observability stack uninstalled"
+
+# ==============================================================================
+# Demo App Operations (Phase 2)
+# ==============================================================================
+
+demo-deploy: ## Deploy demo app via ArgoCD
+	@echo "Deploying demo app via ArgoCD..."
+	@kubectl apply -f apps/demo-app/argocd-app.yaml
+	@echo ""
+	@echo "App deployed! Check status:"
+	@echo "  ArgoCD UI: Look for 'demo-app' application"
+	@echo "  Terminal: kubectl get pods -l app=demo-app -w"
+	@echo ""
+	@echo "Get URL: make demo-url"
+
+demo-url: ## Get demo app LoadBalancer URL
+	@echo "Demo App URL:"
+	@echo ""
+	@kubectl get svc demo-app -o jsonpath='http://{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null && echo "" || echo "LoadBalancer not ready yet. Wait 2-3 minutes."
+	@echo ""
+
+demo-delete: ## Delete demo app
+	@kubectl delete -f apps/demo-app/argocd-app.yaml
+	@kubectl delete deployment demo-app
+	@kubectl delete service demo-app
+	@echo "Demo app deleted"
 
 .DEFAULT_GOAL := help
