@@ -31,7 +31,7 @@ cluster-create: ## Create EKS cluster (takes ~15-20 min)
 	@echo "Pre-flight checks passed"
 	@echo ""
 	@echo "Creating cluster..."
-	exksctl create cluster -f $(EKS_CONFIG)
+	eksctl create cluster -f $(EKS_CONFIG)
 	@echo ""
 	@echo "Cluster created successfully!"
 	@echo ""
@@ -48,7 +48,7 @@ cluster-delete: ## Delete EKS cluster (takes ~10-15 min)
 	fi
 	@echo ""
 	@echo "Deleting cluster..."
-	exksctl delete cluster --name $(CLUSTER_NAME) --region $(AWS_REGION) --wait
+	eksctl delete cluster --name $(CLUSTER_NAME) --region $(AWS_REGION) --wait
 	@echo ""
 	@echo "Cluster deleted successfully!"
 	@echo "CloudWatch logs retained (small cost, ~\$$3/month)"
