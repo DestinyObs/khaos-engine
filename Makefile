@@ -1,4 +1,4 @@
-.PHONY: help cluster-create cluster-delete cluster-info cluster-cost argocd-install argocd-ui argocd-password
+.PHONY: help cluster-create cluster-delete cluster-info cluster-cost argocd-install argocd-url argocd-password
 
 # ==============================================================================
 # ChaosCraft Makefile - Cluster Management + GitOps
@@ -187,18 +187,24 @@ argocd-install: ## Install ArgoCD
 	@echo "Waiting for ArgoCD to be ready (this may take 2-3 minutes)..."
 	@kubectl wait --for=condition=available --timeout=300s deployment/argocd-server -n argocd
 	@echo ""
+	@echo "Deploying LoadBalancer..."
+	@kubectl apply -f manifests/argocd/loadbalancer.yaml
+	@echo ""
 	@echo "ArgoCD installed successfully!"
 	@echo ""
-	@echo "Access UI: make argocd-ui"
+	@echo "Get URL: make argocd-url"
 	@echo "Get password: make argocd-password"
+	@echo "Note: LoadBalancer may take 2-3 minutes to provision"
 
-argocd-ui: ## Open ArgoCD UI (port-forward to localhost:8888)
-	@echo "ArgoCD UI will be available at: https://localhost:8888"
+argocd-url: ## Get ArgoCD LoadBalancer URL
+	@echo "ArgoCD LoadBalancer URL:"
+	@echo ""
+	@kubectl get svc argocd-server-lb -n argocd -o jsonpath='https://{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null && echo "" || echo "LoadBalancer not ready yet. Wait 2-3 minutes and try again."
+	@echo ""
 	@echo "Username: admin"
 	@echo "Password: run 'make argocd-password' to get password"
 	@echo ""
-	@echo "Press Ctrl+C to stop port-forwarding"
-	@kubectl port-forward svc/argocd-server -n argocd 8888:443
+	@echo "Note: You may get a certificate warning (it's self-signed). Click through it."
 
 argocd-password: ## Get ArgoCD admin password
 	@echo "ArgoCD Admin Password:"

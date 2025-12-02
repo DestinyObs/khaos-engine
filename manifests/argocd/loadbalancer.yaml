@@ -1,0 +1,25 @@
+# ==============================================================================
+# ArgoCD LoadBalancer Service
+# ==============================================================================
+# This exposes ArgoCD UI via AWS Network Load Balancer
+# Cost: ~$20/month for NLB + ~$5/month for data transfer
+# ==============================================================================
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: argocd-server-lb
+  namespace: argocd
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: argocd-server
+  ports:
+    - name: https
+      port: 443
+      targetPort: 8080
+      protocol: TCP
