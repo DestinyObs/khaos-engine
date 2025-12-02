@@ -90,10 +90,6 @@ managedNodeGroups:
     
     # SPOT INSTANCES: 70% discount, can be interrupted
     spot: true
-    instancesDistribution:
-      onDemandBaseCapacity: 0
-      onDemandPercentageAboveBaseCapacity: 0
-      spotAllocationStrategy: capacity-optimized
     
     labels:
       role: worker
