@@ -28,13 +28,13 @@ spec:
           effect: NoSchedule
       containers:
         - name: demo-app
-          image: hashicorp/http-echo:latest
-          args:
-            - -listen=:8085
-            - -text=ChaosCraft Demo App Running!
+          image: nginx:alpine
           ports:
             - containerPort: 8085
               name: http
+          env:
+            - name: NGINX_PORT
+              value: "8085"
           resources:
             requests:
               memory: "64Mi"
