@@ -192,13 +192,13 @@ argocd-install: ## Install ArgoCD
 	@echo "Access UI: make argocd-ui"
 	@echo "Get password: make argocd-password"
 
-argocd-ui: ## Open ArgoCD UI (port-forward to localhost:8080)
-	@echo "ArgoCD UI will be available at: https://localhost:8080"
+argocd-ui: ## Open ArgoCD UI (port-forward to localhost:8888)
+	@echo "ArgoCD UI will be available at: https://localhost:8888"
 	@echo "Username: admin"
 	@echo "Password: run 'make argocd-password' to get password"
 	@echo ""
 	@echo "Press Ctrl+C to stop port-forwarding"
-	@kubectl port-forward svc/argocd-server -n argocd 8080:443
+	@kubectl port-forward svc/argocd-server -n argocd 8888:443
 
 argocd-password: ## Get ArgoCD admin password
 	@echo "ArgoCD Admin Password:"

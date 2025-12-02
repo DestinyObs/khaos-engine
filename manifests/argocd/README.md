@@ -19,7 +19,7 @@ This will:
 make argocd-ui
 ```
 
-This opens a port-forward to `https://localhost:8080`
+This opens a port-forward to `https://localhost:8888`
 
 **Default credentials:**
 - Username: `admin`
