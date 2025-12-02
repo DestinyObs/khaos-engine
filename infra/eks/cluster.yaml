@@ -42,9 +42,9 @@ vpc:
 managedNodeGroups:
   - name: system-nodes
     instanceType: t3.medium  # 2 vCPU, 4GB RAM
-    desiredCapacity: 1
+    desiredCapacity: 2
     minSize: 1
-    maxSize: 2
+    maxSize: 5
     volumeSize: 20
     volumeType: gp3
     
