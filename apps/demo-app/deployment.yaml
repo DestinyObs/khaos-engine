@@ -30,11 +30,8 @@ spec:
         - name: demo-app
           image: nginx:alpine
           ports:
-            - containerPort: 8085
+            - containerPort: 80
               name: http
-          env:
-            - name: NGINX_PORT
-              value: "8085"
           resources:
             requests:
               memory: "64Mi"
@@ -45,12 +42,12 @@ spec:
           livenessProbe:
             httpGet:
               path: /
-              port: 8085
+              port: 80
             initialDelaySeconds: 5
             periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /
-              port: 8085
+              port: 80
             initialDelaySeconds: 5
             periodSeconds: 5
