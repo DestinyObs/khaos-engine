@@ -1,7 +1,7 @@
-.PHONY: help cluster-create cluster-delete cluster-info cluster-cost
+.PHONY: help cluster-create cluster-delete cluster-info cluster-cost argocd-install argocd-ui argocd-password
 
 # ==============================================================================
-# ChaosCraft Makefile - Phase 1: Cluster Management
+# ChaosCraft Makefile - Cluster Management + GitOps
 # ==============================================================================
 
 CLUSTER_NAME ?= chaoscraft
@@ -173,5 +173,47 @@ cluster-logs: ## View cluster logs
 	@echo "Control plane logs are in CloudWatch Logs:"
 	@echo "Log Groups:"
 	@aws logs describe-log-groups --log-group-name-prefix "/aws/eks/$(CLUSTER_NAME)" --region $(AWS_REGION) --query 'logGroups[*].logGroupName' --output table
+
+# ==============================================================================
+# ArgoCD Operations (Phase 2)
+# ==============================================================================
+
+argocd-install: ## Install ArgoCD
+	@echo "Installing ArgoCD..."
+	@kubectl get namespace argocd > /dev/null 2>&1 || kubectl create namespace argocd
+	@echo "Applying ArgoCD manifests..."
+	@kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+	@echo ""
+	@echo "Waiting for ArgoCD to be ready (this may take 2-3 minutes)..."
+	@kubectl wait --for=condition=available --timeout=300s deployment/argocd-server -n argocd
+	@echo ""
+	@echo "ArgoCD installed successfully!"
+	@echo ""
+	@echo "Access UI: make argocd-ui"
+	@echo "Get password: make argocd-password"
+
+argocd-ui: ## Open ArgoCD UI (port-forward to localhost:8080)
+	@echo "ArgoCD UI will be available at: https://localhost:8080"
+	@echo "Username: admin"
+	@echo "Password: run 'make argocd-password' to get password"
+	@echo ""
+	@echo "Press Ctrl+C to stop port-forwarding"
+	@kubectl port-forward svc/argocd-server -n argocd 8080:443
+
+argocd-password: ## Get ArgoCD admin password
+	@echo "ArgoCD Admin Password:"
+	@kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" 2>/dev/null | base64 -d || echo "Secret not found. ArgoCD may not be installed yet."
+	@echo ""
+
+argocd-uninstall: ## Uninstall ArgoCD
+	@echo "WARNING: This will delete ArgoCD and all its resources!"
+	@read -p "Are you sure? Type 'yes' to confirm: " confirm; \
+	if [ "$$confirm" != "yes" ]; then \
+		echo "Uninstall cancelled"; \
+		exit 1; \
+	fi
+	@kubectl delete -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+	@kubectl delete namespace argocd
+	@echo "ArgoCD uninstalled"
 
 .DEFAULT_GOAL := help
