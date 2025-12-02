@@ -1,4 +1,4 @@
-.PHONY: help cluster-create cluster-delete cluster-info cluster-cost argocd-install argocd-url argocd-password
+.PHONY: help cluster-create cluster-delete cluster-info cluster-cost argocd-install argocd-url argocd-password observability-install prometheus-url grafana-url
 
 # ==============================================================================
 # ChaosCraft Makefile - Cluster Management + GitOps
@@ -221,5 +221,55 @@ argocd-uninstall: ## Uninstall ArgoCD
 	@kubectl delete -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 	@kubectl delete namespace argocd
 	@echo "ArgoCD uninstalled"
+
+# ==============================================================================
+# Observability Operations (Phase 2)
+# ==============================================================================
+
+observability-install: ## Install Prometheus + Grafana
+	@echo "Installing Prometheus and Grafana..."
+	@kubectl apply -f manifests/observability/namespace.yaml
+	@kubectl apply -f manifests/observability/prometheus.yaml
+	@kubectl apply -f manifests/observability/grafana.yaml
+	@echo ""
+	@echo "Waiting for Prometheus to be ready..."
+	@kubectl wait --for=condition=available --timeout=180s deployment/prometheus -n observability
+	@echo "Waiting for Grafana to be ready..."
+	@kubectl wait --for=condition=available --timeout=180s deployment/grafana -n observability
+	@echo ""
+	@echo "Observability stack installed successfully!"
+	@echo ""
+	@echo "Prometheus URL: make prometheus-url"
+	@echo "Grafana URL: make grafana-url"
+	@echo "Note: LoadBalancers may take 2-3 minutes to provision"
+
+prometheus-url: ## Get Prometheus LoadBalancer URL
+	@echo "Prometheus URL:"
+	@echo ""
+	@kubectl get svc prometheus-lb -n observability -o jsonpath='http://{.status.loadBalancer.ingress[0].hostname}:9090' 2>/dev/null && echo "" || echo "LoadBalancer not ready yet."
+	@echo ""
+
+grafana-url: ## Get Grafana LoadBalancer URL
+	@echo "Grafana URL:"
+	@echo ""
+	@kubectl get svc grafana-lb -n observability -o jsonpath='http://{.status.loadBalancer.ingress[0].hostname}:3000' 2>/dev/null && echo "" || echo "LoadBalancer not ready yet."
+	@echo ""
+	@echo "Default credentials:"
+	@echo "Username: admin"
+	@echo "Password: admin"
+	@echo ""
+	@echo "Change password on first login"
+
+observability-uninstall: ## Uninstall Prometheus + Grafana
+	@echo "WARNING: This will delete all observability resources!"
+	@read -p "Are you sure? Type 'yes' to confirm: " confirm; \
+	if [ "$$confirm" != "yes" ]; then \
+		echo "Uninstall cancelled"; \
+		exit 1; \
+	fi
+	@kubectl delete -f manifests/observability/grafana.yaml
+	@kubectl delete -f manifests/observability/prometheus.yaml
+	@kubectl delete namespace observability
+	@echo "Observability stack uninstalled"
 
 .DEFAULT_GOAL := help
