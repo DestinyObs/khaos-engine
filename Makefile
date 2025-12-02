@@ -276,6 +276,26 @@ observability-uninstall: ## Uninstall Prometheus + Grafana
 # Demo App Operations (Phase 2)
 # ==============================================================================
 
+DOCKER_IMAGE := destinyobs/chaoscraft-demo
+DOCKER_TAG := latest
+
+demo-build: ## Build demo app Docker image
+	@echo "Building demo app Docker image..."
+	cd apps/demo-app && docker build -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
+	@echo ""
+	@echo "Image built: $(DOCKER_IMAGE):$(DOCKER_TAG)"
+	@echo "Next: make demo-push"
+
+demo-push: ## Push demo app image to Docker Hub
+	@echo "Pushing image to Docker Hub..."
+	@echo "NOTE: You need to be logged in to Docker Hub"
+	@echo "Run: docker login"
+	@echo ""
+	docker push $(DOCKER_IMAGE):$(DOCKER_TAG)
+	@echo ""
+	@echo "Image pushed: $(DOCKER_IMAGE):$(DOCKER_TAG)"
+	@echo "Next: make demo-deploy"
+
 demo-deploy: ## Deploy demo app via ArgoCD
 	@echo "Deploying demo app via ArgoCD..."
 	@kubectl apply -f apps/demo-app/argocd-app.yaml
