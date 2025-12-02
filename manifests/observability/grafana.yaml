@@ -240,6 +240,8 @@ spec:
       labels:
         app: grafana
     spec:
+      nodeSelector:
+        role: system
       containers:
         - name: grafana
           image: grafana/grafana:10.2.0

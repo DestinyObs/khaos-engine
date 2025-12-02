@@ -139,6 +139,8 @@ spec:
         app: prometheus
     spec:
       serviceAccountName: prometheus
+      nodeSelector:
+        role: system
       containers:
         - name: prometheus
           image: prom/prometheus:v2.48.0
