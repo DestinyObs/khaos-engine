@@ -29,10 +29,9 @@ spec:
       containers:
         - name: demo-app
           image: hashicorp/http-echo:latest
-          command:
-            - http-echo
+          args:
             - -listen=:8085
-            - -text=ChaosCraft Demo - Temporary until custom image built
+            - -text=ChaosCraft Demo App Running!
           ports:
             - containerPort: 8085
               name: http
